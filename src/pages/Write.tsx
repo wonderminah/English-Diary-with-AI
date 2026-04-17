@@ -265,7 +265,7 @@ export default function Write() {
       <div className="write-page">
         <div className="write-top">
           <button className="write-back" onClick={() => navigate('/')}>
-            ‹ 홈으로
+            <span className="write-back-arrow">‹</span> 홈으로
           </button>
           <h1 className="write-title">{pageTitle}</h1>
         </div>

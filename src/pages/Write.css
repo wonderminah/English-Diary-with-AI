@@ -10,12 +10,18 @@
 .write-back {
   font-size: 14px;
   color: #888;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   display: block;
 }
 
 .write-back:hover {
   color: #444;
+}
+
+.write-back-arrow {
+  font-size: 20px;
+  line-height: 1;
+  vertical-align: bottom;
 }
 
 .write-title {
