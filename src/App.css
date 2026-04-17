@@ -1,3 +1,14 @@
 body {
   margin: 0;
 }
+
+form {
+}
+
+input {
+  /* all: unset; */
+}
+
+textarea {
+  width: calc(100vw / 3);
+}
