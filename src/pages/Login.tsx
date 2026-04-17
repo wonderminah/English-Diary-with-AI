@@ -49,7 +49,7 @@ export default function Login() {
             <p className="login-brand-tagline">매일 10분, 영어가 달라지는 기록 습관</p>
             <h1 className="login-brand-title">
               오늘의 한 줄이<br />
-              내일의 영어 실력을<br />
+              <span className="login-brand-title-highlight">내일의 영어 실력</span>을<br />
               만듭니다.
             </h1>
             <p className="login-brand-sub">
