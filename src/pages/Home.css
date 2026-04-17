@@ -1,0 +1,261 @@
+/* ── 홈 2컬럼 레이아웃 ── */
+.home {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+  align-items: start;
+}
+
+/* ── 상단 ── */
+.home-top {
+  grid-column: 1 / -1;
+  margin-bottom: 4px;
+}
+
+.home-top h1 {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.home-top p {
+  font-size: 14px;
+  color: #888;
+}
+
+/* ── 캘린더 ── */
+.calendar {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.calendar-title {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.calendar-nav-btn {
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+  color: #888;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendar-nav-btn:hover {
+  background: #F0F0F0;
+}
+
+.calendar-today-btn {
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #3A7D44;
+  border: 1px solid #3A7D44;
+  border-radius: 6px;
+}
+
+.calendar-today-btn:hover {
+  background: #EAF5EA;
+}
+
+/* 7열 그리드 */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendar-weekday {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #AAA;
+  padding: 4px 0 8px;
+}
+
+/* 날짜 셀 */
+.calendar-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 52px;
+}
+
+.calendar-day {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #444;
+}
+
+/* 완료 (90점 이상) → 초록 원 */
+.calendar-day.complete {
+  background: #3A7D44;
+  color: #fff;
+}
+
+/* 재도전 (90점 미만) → 주황 원 */
+.calendar-day.retry {
+  background: #E8874A;
+  color: #fff;
+}
+
+/* 오늘 → 테두리만 */
+.calendar-day.today {
+  border: 2px solid #3A7D44;
+  color: #3A7D44;
+  font-weight: 700;
+}
+
+/* 점수 원 아래 날짜 숫자 */
+.calendar-date-label {
+  font-size: 10px;
+  color: #AAA;
+}
+
+/* 범례 */
+.calendar-legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #F0F0F0;
+}
+
+.legend-item {
+  font-size: 12px;
+  color: #888;
+}
+
+.legend-item.complete { color: #3A7D44; }
+.legend-item.retry    { color: #E8874A; }
+.legend-item.empty    { color: #CCC; }
+
+/* ── 오른쪽 ── */
+.home-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 오늘 일기 카드 */
+.today-card {
+  background: #D6EDDA;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.today-card-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2D6235;
+}
+
+.today-card-text {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1A1A1A;
+  line-height: 1.5;
+}
+
+.btn-write-today {
+  background: #2D6235;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 12px;
+  border-radius: 10px;
+  text-align: center;
+  margin-top: 4px;
+}
+
+.btn-write-today:hover {
+  background: #1E4A26;
+}
+
+/* 이번 주 통계 카드 */
+.stats-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stats-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1A1A1A;
+}
+
+.stats-written {
+  font-size: 14px;
+  color: #444;
+}
+
+.stats-written strong {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1A1A1A;
+}
+
+.stats-progress-bar {
+  height: 8px;
+  background: #F0F0F0;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.stats-progress-fill {
+  height: 100%;
+  background: #3A7D44;
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.stats-score-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stats-score-label {
+  font-size: 13px;
+  color: #888;
+}
+
+.stats-score-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1A1A1A;
+}
