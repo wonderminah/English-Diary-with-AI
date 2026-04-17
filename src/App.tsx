@@ -1,7 +1,7 @@
-import Login from './pages/Login'
+import Write from './pages/Write'
 
 function App() {
-  return <Login />
+  return <Write />
 }
 
 export default App
