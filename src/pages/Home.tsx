@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import Layout from '../layouts/Layout'
 import Calendar from '../components/Calendar'
 import type { DiaryEntry } from '../components/Calendar'
@@ -17,6 +18,7 @@ const YEAR = 2026
 const MONTH = 4
 
 export default function Home() {
+  const navigate = useNavigate()
   const writtenThisWeek = 3
   const totalDaysInWeek = 7
   const avgScore = 87
@@ -51,7 +53,7 @@ export default function Home() {
             <p className="today-card-text">
               오늘의 기록이<br />영어 실력을 만듭니다!
             </p>
-            <button className="btn-write-today">일기 쓰기</button>
+            <button className="btn-write-today" onClick={() => navigate('/write')}>일기 쓰기</button>
           </div>
 
           {/* 이번 주 통계 카드 */}

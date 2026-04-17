@@ -355,7 +355,6 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
-  margin-bottom: 16px;
 }
 
 .result-text {
@@ -371,7 +370,7 @@
 
 /* 주요 차이점 */
 .result-diff-card {
-  margin-bottom: 0;
+  margin-bottom: 16px;
 }
 
 .result-diff-list {

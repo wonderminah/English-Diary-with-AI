@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Layout from '../layouts/Layout'
 import './Write.css'
 
@@ -171,7 +172,7 @@ function Step2({
         ) : (
           <>
             {attempt < MAX_ATTEMPTS && (
-              <button className="btn-secondary" onClick={onRetry}>
+              <button className="btn-secondary" onClick={() => { setText(''); setSubmitted(false); onRetry() }}>
                 다시 작성
               </button>
             )}
@@ -251,6 +252,7 @@ function Step3({ userText, onGoHome }: { userText: string; onGoHome: () => void 
 
 // ── 메인 Write 페이지 ─────────────────────────────────
 export default function Write() {
+  const navigate = useNavigate()
   const [step, setStep] = useState<Step>(1)
   const [koreanText, setKoreanText] = useState('')
   const [englishText, setEnglishText] = useState('')
@@ -262,7 +264,7 @@ export default function Write() {
     <Layout activeTab="홈">
       <div className="write-page">
         <div className="write-top">
-          <button className="write-back" onClick={() => step > 1 ? setStep(s => (s - 1) as Step) : undefined}>
+          <button className="write-back" onClick={() => navigate('/')}>
             ‹ 홈으로
           </button>
           <h1 className="write-title">{pageTitle}</h1>
@@ -284,7 +286,7 @@ export default function Write() {
         {step === 3 && (
           <Step3
             userText={englishText}
-            onGoHome={() => setStep(1)}
+            onGoHome={() => navigate('/')}
           />
         )}
       </div>

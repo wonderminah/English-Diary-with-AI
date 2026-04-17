@@ -1,5 +1,4 @@
 import Layout from '../layouts/Layout'
-import heroPng from '../assets/hero.png'
 import './Login.css'
 
 function GoogleIcon() {
