@@ -1,30 +1,41 @@
 import { useState } from 'react'
+import { WEEK_DAYS } from '../constants/days'
 
 // 날짜별 일기 데이터 타입
+export interface Correction {
+  original: string
+  corrected: string
+  explanation: string
+}
+
 export interface DiaryEntry {
   score: number
+  koreanText: string
+  englishText: string
+  aiCorrectedText: string
+  corrections: Correction[]
+  createdTime: string   // "HH:MM" 형식
 }
 
 interface CalendarProps {
-  year: number        // 오늘의 연도
-  month: number       // 오늘의 월 (1~12)
-  today: number       // 오늘 날짜
-  entries: Record<number, DiaryEntry> // 이번 달 일기 데이터
+  year: number
+  month: number
+  today: number
+  entries: Record<number, DiaryEntry>
+  onDateClick: (date: number, year: number, month: number, entry: DiaryEntry | null) => void
 }
 
-// 해당 월의 1일이 무슨 요일인지 반환 (월요일 시작 기준: 월=0 ... 일=6)
+// 해당 월의 1일이 무슨 요일인지 반환 (일요일 시작 기준: 일=0 ... 토=6)
 function getStartDayOfMonth(year: number, month: number): number {
-  const day = new Date(year, month - 1, 1).getDay()
-  return day === 0 ? 6 : day - 1
+  return new Date(year, month - 1, 1).getDay()
 }
 
 function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate()
 }
 
-const WEEK_DAYS = ['월', '화', '수', '목', '금', '토', '일']
 
-export default function Calendar({ year, month, today, entries }: CalendarProps) {
+export default function Calendar({ year, month, today, entries, onDateClick }: CalendarProps) {
   const [curYear, setCurYear] = useState(year)
   const [curMonth, setCurMonth] = useState(month)
 
@@ -86,7 +97,7 @@ export default function Calendar({ year, month, today, entries }: CalendarProps)
           const score = activeEntries[date]?.score
 
           return (
-            <div key={date} className="calendar-cell">
+            <div key={date} className="calendar-cell" onClick={() => onDateClick(date, curYear, curMonth, activeEntries[date] ?? null)}>
               <div className={`calendar-day ${status}`}>
                 {status === 'complete' || status === 'retry' ? score : date}
               </div>

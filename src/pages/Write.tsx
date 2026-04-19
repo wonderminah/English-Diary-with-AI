@@ -1,11 +1,10 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import Layout from '../layouts/Layout'
 import './Write.css'
+import { WEEK_DAYS } from '../constants/days'
 
 type Step = 1 | 2 | 3
-
-const MOCK_DATE = '2026년 4월 17일 (오늘)'
 
 // Step 2에서 쓸 mock AI 점수/힌트 (나중에 실제 API로 교체)
 const MOCK_SCORE = 82
@@ -46,13 +45,15 @@ function StepIndicator({ step }: { step: Step }) {
   )
 }
 
+
 // ── 날짜 셀렉터 ──────────────────────────────────────
-function DateSelector() {
+function DateSelector({ year, month, date }: { year: number; month: number; date: number }) {
+  const dayLabel = WEEK_DAYS[new Date(year, month - 1, date).getDay()]
   return (
     <div className="date-selector-wrap">
       <button className="date-selector">
         <span className="date-selector-icon">📅</span>
-        <span>{MOCK_DATE}</span>
+        <span>{year}년 {month}월 {date}일 ({dayLabel})</span>
         <span className="date-selector-arrow">∨</span>
       </button>
       <p className="date-selector-hint">날짜를 클릭하면 다른 날짜로 변경할 수 있어요.</p>
@@ -60,14 +61,16 @@ function DateSelector() {
   )
 }
 
+interface DateProps { year: number; month: number; date: number }
+
 // ── Step 1: 한국어 입력 ──────────────────────────────
-function Step1({ onNext }: { onNext: (text: string) => void }) {
+function Step1({ onNext, year, month, date }: { onNext: (text: string) => void } & DateProps) {
   const [text, setText] = useState('')
   const MAX = 1000
 
   return (
     <div className="write-step">
-      <DateSelector />
+      <DateSelector year={year} month={month} date={date} />
 
       <div className="write-card">
         <div className="write-card-header">
@@ -103,12 +106,15 @@ function Step2({
   onNext,
   attempt,
   onRetry,
+  year,
+  month,
+  date,
 }: {
   koreanText: string
   onNext: (text: string) => void
   attempt: number
   onRetry: () => void
-}) {
+} & DateProps) {
   const [text, setText] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const MAX = 1000
@@ -120,7 +126,7 @@ function Step2({
 
   return (
     <div className="write-step">
-      <DateSelector />
+      <DateSelector year={year} month={month} date={date} />
 
       <div className="step2-grid">
         {/* 왼쪽: 한국어 원문 */}
@@ -187,13 +193,13 @@ function Step2({
 }
 
 // ── Step 3: 결과 확인 ────────────────────────────────
-function Step3({ userText, onGoHome }: { userText: string; onGoHome: () => void }) {
+function Step3({ userText, onGoHome, year, month, date }: { userText: string; onGoHome: () => void } & DateProps) {
   const score = 93
   const aiText = `After school, I went to a cafe with my friend. I tried a new beverage, and it was delicious. Then I came home and studied English for a bit.`
 
   return (
     <div className="write-step">
-      <DateSelector />
+      <DateSelector year={year} month={month} date={date} />
 
       <div className="result-header">
         <p className="result-congrats">🎉 축하합니다! 합격이에요!</p>
@@ -253,10 +259,16 @@ function Step3({ userText, onGoHome }: { userText: string; onGoHome: () => void 
 // ── 메인 Write 페이지 ─────────────────────────────────
 export default function Write() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [step, setStep] = useState<Step>(1)
   const [koreanText, setKoreanText] = useState('')
   const [englishText, setEnglishText] = useState('')
   const [attempt, setAttempt] = useState(1)
+
+  const today = new Date()
+  const year = Number(searchParams.get('year') ?? today.getFullYear())
+  const month = Number(searchParams.get('month') ?? today.getMonth() + 1)
+  const date = Number(searchParams.get('date') ?? today.getDate())
 
   const pageTitle = step === 3 ? '학습 결과' : '일기 작성'
 
@@ -273,10 +285,11 @@ export default function Write() {
         <StepIndicator step={step} />
 
         {step === 1 && (
-          <Step1 onNext={(text) => { setKoreanText(text); setStep(2) }} />
+          <Step1 year={year} month={month} date={date} onNext={(text) => { setKoreanText(text); setStep(2) }} />
         )}
         {step === 2 && (
           <Step2
+            year={year} month={month} date={date}
             koreanText={koreanText}
             attempt={attempt}
             onNext={(text) => { setEnglishText(text); setStep(3) }}
@@ -285,6 +298,7 @@ export default function Write() {
         )}
         {step === 3 && (
           <Step3
+            year={year} month={month} date={date}
             userText={englishText}
             onGoHome={() => navigate('/')}
           />
