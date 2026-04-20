@@ -14,7 +14,14 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig)
 const functions = getFunctions(app)
 
+export interface GradeResult {
+  score: number
+  hint: string
+  correctedText: string
+  corrections: { original: string; corrected: string; explanation: string }[]
+}
+
 export const gradeEntry = httpsCallable<
   { koreanText: string; englishText: string },
-  { score: number; hint: string }
+  GradeResult
 >(functions, 'gradeEntry')

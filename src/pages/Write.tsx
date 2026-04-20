@@ -4,16 +4,12 @@ import Layout from '../layouts/Layout'
 import './Write.css'
 import { WEEK_DAYS } from '../constants/days'
 import { gradeEntry } from '../lib/firebase'
+import type { GradeResult } from '../lib/firebase'
+import { db } from '../firebase'
+import { addDoc, updateDoc, arrayUnion, collection, doc, serverTimestamp, Timestamp } from 'firebase/firestore'
 
 type Step = 1 | 2 | 3
 
-// Step 3에서 쓸 mock AI 추천 (나중에 실제 API로 교체)
-const MOCK_CORRECTIONS = [
-  { original: 'go', corrected: 'went', explanation: '과거형' },
-  { original: 'drink → beverage', corrected: '더 자연스러운 표현', explanation: '더 자연스러운 표현' },
-  { original: 'and it was really good', corrected: 'and it was delicious', explanation: '더 적절한 형용사' },
-  { original: 'I came home and', corrected: 'Then I came home and', explanation: '순서 표현 추가' },
-]
 
 // ── 스텝 인디케이터 ──────────────────────────────────
 function StepIndicator({ step }: { step: Step }) {
@@ -103,18 +99,22 @@ function Step2({
   onNext,
   attempt,
   onRetry,
+  onSave,
+  initialText = '',
   year,
   month,
   date,
 }: {
   koreanText: string
-  onNext: (text: string) => void
+  onNext: (text: string, result: GradeResult) => void
   attempt: number
   onRetry: () => void
+  onSave: (englishText: string, score: number, hint: string) => Promise<void>
+  initialText?: string
 } & DateProps) {
-  const [text, setText] = useState('')
+  const [text, setText] = useState(initialText)
   const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<{ score: number; hint: string } | null>(null)
+  const [result, setResult] = useState<GradeResult | null>(null)
   const MAX = 1000
   const MAX_ATTEMPTS = 3
 
@@ -122,6 +122,7 @@ function Step2({
     setLoading(true)
     try {
       const res = await gradeEntry({ koreanText, englishText: text })
+      await onSave(text, res.data.score, res.data.hint)
       setResult(res.data)
     } finally {
       setLoading(false)
@@ -186,7 +187,7 @@ function Step2({
                 다시 작성
               </button>
             )}
-            <button className="btn-next" onClick={() => onNext(text)}>
+            <button className="btn-next" onClick={() => onNext(text, result!)}>
               결과 확인하기 →
             </button>
           </>
@@ -197,10 +198,7 @@ function Step2({
 }
 
 // ── Step 3: 결과 확인 ────────────────────────────────
-function Step3({ userText, onGoHome, year, month, date }: { userText: string; onGoHome: () => void } & DateProps) {
-  const score = 93
-  const aiText = `After school, I went to a cafe with my friend. I tried a new beverage, and it was delicious. Then I came home and studied English for a bit.`
-
+function Step3({ userText, gradeResult, onGoHome, onEdit, year, month, date }: { userText: string; gradeResult: GradeResult; onGoHome: () => void; onEdit: () => void } & DateProps) {
   return (
     <div className="write-step">
       <DateSelector year={year} month={month} date={date} />
@@ -208,50 +206,44 @@ function Step3({ userText, onGoHome, year, month, date }: { userText: string; on
       <div className="result-header">
         <p className="result-congrats">🎉 축하합니다! 합격이에요!</p>
         <div className="result-score-row">
-          <span className="result-score">{score}</span>
+          <span className="result-score">{gradeResult.score}</span>
           <span className="result-score-denom">/ 100</span>
           <span className="result-grade">Good!</span>
         </div>
       </div>
 
       <div className="result-grid">
-        {/* 내 문장 */}
         <div className="write-card">
           <span className="write-card-title">내 문장</span>
           <p className="result-text">{userText}</p>
         </div>
 
-        {/* AI 추천 문장 */}
         <div className="write-card">
           <span className="write-card-title">AI 추천 문장</span>
-          <p className="result-text">
-            After school, I <span className="result-highlight">went</span> to a cafe
-            with my friend. I <span className="result-highlight">tried a new beverage</span>,
-            and it was delicious. <span className="result-highlight">Then</span> I came home
-            and studied English <span className="result-highlight">for a bit</span>.
-          </p>
+          <p className="result-text">{gradeResult.correctedText}</p>
         </div>
       </div>
 
-      {/* 주요 차이점 */}
-      <div className="write-card result-diff-card">
-        <span className="write-card-title">주요 차이점</span>
-        <ul className="result-diff-list">
-          {MOCK_CORRECTIONS.map((c, i) => (
-            <li key={i}>
-              <span className="diff-arrow">•</span>
-              <strong>{c.original}</strong> → <strong className="diff-corrected">{c.corrected}</strong>
-              <span className="diff-explanation"> ({c.explanation})</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {gradeResult.corrections.length > 0 && (
+        <div className="write-card result-diff-card">
+          <span className="write-card-title">주요 차이점</span>
+          <ul className="result-diff-list">
+            {gradeResult.corrections.map((c, i) => (
+              <li key={i}>
+                <span className="diff-arrow">•</span>
+                <strong>{c.original}</strong> → <strong className="diff-corrected">{c.corrected}</strong>
+                <span className="diff-explanation"> ({c.explanation})</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="write-actions">
         <button className="btn-secondary" onClick={onGoHome}>
           캘린더로 돌아가기
         </button>
-        <button className="btn-next">
+        <button className="btn-next" onClick={onEdit}>
           이 일기 수정하기
         </button>
         <button className="btn-share">공유하기</button>
@@ -268,11 +260,40 @@ export default function Write() {
   const [koreanText, setKoreanText] = useState('')
   const [englishText, setEnglishText] = useState('')
   const [attempt, setAttempt] = useState(1)
+  const [entryDocId, setEntryDocId] = useState<string | null>(null)
+  const [gradeResult, setGradeResult] = useState<GradeResult | null>(null)
 
   const today = new Date()
   const year = Number(searchParams.get('year') ?? today.getFullYear())
   const month = Number(searchParams.get('month') ?? today.getMonth() + 1)
   const date = Number(searchParams.get('date') ?? today.getDate())
+
+  const diaryDate = `${year}-${String(month).padStart(2, '0')}-${String(date).padStart(2, '0')}`
+
+  async function saveTranslationAttempt(engText: string, score: number, hint: string) {
+    const attemptData = {
+      num: attempt,
+      englishText: engText,
+      score,
+      hint,
+      createdAt: Timestamp.now(),
+    }
+    if (!entryDocId) {
+      const ref = await addDoc(collection(db, 'diary'), {
+        diaryDate,
+        koreanText,
+        translationAttempts: [attemptData],
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      })
+      setEntryDocId(ref.id)
+    } else {
+      await updateDoc(doc(db, 'diary', entryDocId), {
+        translationAttempts: arrayUnion(attemptData),
+        updatedAt: serverTimestamp(),
+      })
+    }
+  }
 
   const pageTitle = step === 3 ? '학습 결과' : '일기 작성'
 
@@ -296,15 +317,19 @@ export default function Write() {
             year={year} month={month} date={date}
             koreanText={koreanText}
             attempt={attempt}
-            onNext={(text) => { setEnglishText(text); setStep(3) }}
+            onNext={(text, result) => { setEnglishText(text); setGradeResult(result); setStep(3) }}
             onRetry={() => setAttempt(a => a + 1)}
+            onSave={saveTranslationAttempt}
+            initialText={englishText}
           />
         )}
         {step === 3 && (
           <Step3
             year={year} month={month} date={date}
             userText={englishText}
+            gradeResult={gradeResult!}
             onGoHome={() => navigate('/')}
+            onEdit={() => setStep(2)}
           />
         )}
       </div>
