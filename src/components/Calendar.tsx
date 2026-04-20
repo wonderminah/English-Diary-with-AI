@@ -23,6 +23,7 @@ interface CalendarProps {
   today: number
   entries: Record<number, DiaryEntry>
   onDateClick: (date: number, year: number, month: number, entry: DiaryEntry | null) => void
+  onMonthChange?: (year: number, month: number) => void
 }
 
 // 해당 월의 1일이 무슨 요일인지 반환 (일요일 시작 기준: 일=0 ... 토=6)
@@ -35,28 +36,31 @@ function getDaysInMonth(year: number, month: number): number {
 }
 
 
-export default function Calendar({ year, month, today, entries, onDateClick }: CalendarProps) {
+export default function Calendar({ year, month, today, entries, onDateClick, onMonthChange }: CalendarProps) {
   const [curYear, setCurYear] = useState(year)
   const [curMonth, setCurMonth] = useState(month)
 
   function goPrev() {
-    if (curMonth === 1) { setCurYear(y => y - 1); setCurMonth(12) }
-    else setCurMonth(m => m - 1)
+    const newYear = curMonth === 1 ? curYear - 1 : curYear
+    const newMonth = curMonth === 1 ? 12 : curMonth - 1
+    setCurYear(newYear); setCurMonth(newMonth)
+    onMonthChange?.(newYear, newMonth)
   }
 
   function goNext() {
-    if (curMonth === 12) { setCurYear(y => y + 1); setCurMonth(1) }
-    else setCurMonth(m => m + 1)
+    const newYear = curMonth === 12 ? curYear + 1 : curYear
+    const newMonth = curMonth === 12 ? 1 : curMonth + 1
+    setCurYear(newYear); setCurMonth(newMonth)
+    onMonthChange?.(newYear, newMonth)
   }
 
   function goToday() {
     setCurYear(year)
     setCurMonth(month)
+    onMonthChange?.(year, month)
   }
 
-  // 현재 보고 있는 달이 "오늘의 달"일 때만 entries/today 표시
   const isCurrentMonth = curYear === year && curMonth === month
-  const activeEntries = isCurrentMonth ? entries : {}
   const activeToday = isCurrentMonth ? today : -1
 
   const startDay = getStartDayOfMonth(curYear, curMonth)
@@ -68,10 +72,10 @@ export default function Calendar({ year, month, today, entries, onDateClick }: C
   ]
 
   function getDayStatus(date: number) {
-    const entry = activeEntries[date]
+    const entry = entries[date]
+    if (entry) return entry.score >= 90 ? 'complete' : 'retry'
     if (date === activeToday) return 'today'
-    if (!entry) return 'empty'
-    return entry.score >= 90 ? 'complete' : 'retry'
+    return 'empty'
   }
 
   return (
@@ -94,10 +98,10 @@ export default function Calendar({ year, month, today, entries, onDateClick }: C
           if (date === null) return <div key={`empty-${i}`} />
 
           const status = getDayStatus(date)
-          const score = activeEntries[date]?.score
+          const score = entries[date]?.score
 
           return (
-            <div key={date} className="calendar-cell" onClick={() => onDateClick(date, curYear, curMonth, activeEntries[date] ?? null)}>
+            <div key={date} className="calendar-cell" onClick={() => onDateClick(date, curYear, curMonth, entries[date] ?? null)}>
               <div className={`calendar-day ${status}`}>
                 {status === 'complete' || status === 'retry' ? score : date}
               </div>

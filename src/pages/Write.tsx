@@ -109,7 +109,7 @@ function Step2({
   onNext: (text: string, result: GradeResult) => void
   attempt: number
   onRetry: () => void
-  onSave: (englishText: string, score: number, hint: string) => Promise<void>
+  onSave: (englishText: string, result: GradeResult) => Promise<void>
   initialText?: string
 } & DateProps) {
   const [text, setText] = useState(initialText)
@@ -122,7 +122,7 @@ function Step2({
     setLoading(true)
     try {
       const res = await gradeEntry({ koreanText, englishText: text })
-      await onSave(text, res.data.score, res.data.hint)
+      await onSave(text, res.data)
       setResult(res.data)
     } finally {
       setLoading(false)
@@ -270,12 +270,14 @@ export default function Write() {
 
   const diaryDate = `${year}-${String(month).padStart(2, '0')}-${String(date).padStart(2, '0')}`
 
-  async function saveTranslationAttempt(engText: string, score: number, hint: string) {
+  async function saveTranslationAttempt(engText: string, result: GradeResult) {
     const attemptData = {
       num: attempt,
       englishText: engText,
-      score,
-      hint,
+      score: result.score,
+      hint: result.hint,
+      correctedText: result.correctedText,
+      corrections: result.corrections,
       createdAt: Timestamp.now(),
     }
     if (!entryDocId) {

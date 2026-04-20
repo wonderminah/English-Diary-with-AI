@@ -1,19 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../layouts/Layout'
 import Calendar from '../components/Calendar'
 import DiaryModal from '../components/DiaryModal'
 import EmptyDiaryModal from '../components/EmptyDiaryModal'
 import type { DiaryEntry } from '../components/Calendar'
+import { db } from '../firebase'
+import { collection, query, where, getDocs } from 'firebase/firestore'
+import type { Timestamp } from 'firebase/firestore'
 import './Home.css'
-
-const MOCK_ENTRIES: Record<number, DiaryEntry> = {
-  3:  { score: 92, koreanText: '오늘 학교 수업이 끝나고 친구랑 카페에 갔다. 새로운 음료를 마셨는데 맛있었다. 집에 돌아와서 영어 공부를 조금 했다.', englishText: 'After school end, I go cafe with friend. I drink new beverage, it was so delicious. I come back home and do English study little bit.', aiCorrectedText: 'After school, I went to a cafe with my friend. I tried a new beverage, and it was delicious. Then I came home and studied English for a bit.', corrections: [{ original: 'go', corrected: 'went', explanation: '과거형' }], createdTime: '21:30' },
-  4:  { score: 88, koreanText: '오늘은 도서관에서 공부를 했다. 집중이 잘 됐고 많이 배웠다.', englishText: 'Today I study at library. My concentrate was very good and I learn many things.', aiCorrectedText: 'Today I studied at the library. I was able to focus well and learned a lot.', corrections: [{ original: 'focused well', corrected: 'able to focus well', explanation: '더 자연스러운 표현' }], createdTime: '20:15' },
-  5:  { score: 72, koreanText: '오늘은 별로 한 게 없었다. 집에서 쉬었다.', englishText: 'Today I don\'t do anything special. I just take rest in my home.', aiCorrectedText: 'Today I did not do much. I just rested at home.', corrections: [{ original: 'rested', corrected: 'just rested', explanation: '강조 표현 추가' }], createdTime: '22:00' },
-  7:  { score: 95, koreanText: '친구 생일 파티가 있었다. 정말 즐거운 하루였다.', englishText: 'Today is my friend\'s birthday party. It was very very fun day for me.', aiCorrectedText: 'I attended my friend\'s birthday party. It was a truly enjoyable day.', corrections: [{ original: 'really fun', corrected: 'truly enjoyable', explanation: '더 세련된 표현' }], createdTime: '23:10' },
-  9:  { score: 84, koreanText: '오늘 운동을 했다. 힘들었지만 보람찼다.', englishText: 'I did exercise today. It was very hard but I feel good after that.', aiCorrectedText: 'I exercised today. It was tough but very rewarding.', corrections: [{ original: 'worked out', corrected: 'exercised', explanation: '더 격식체 표현' }], createdTime: '19:45' },
-}
 
 const _today = new Date()
 const TODAY = _today.getDate()
@@ -30,6 +25,44 @@ interface ModalState {
 export default function Home() {
   const navigate = useNavigate()
   const [modal, setModal] = useState<ModalState | null>(null)
+  const [entries, setEntries] = useState<Record<number, DiaryEntry>>({})
+  const [viewYear, setViewYear] = useState(YEAR)
+  const [viewMonth, setViewMonth] = useState(MONTH)
+
+  useEffect(() => {
+    const mm = String(viewMonth).padStart(2, '0')
+    const from = `${viewYear}-${mm}-01`
+    const to   = `${viewYear}-${mm}-31`
+
+    getDocs(query(
+      collection(db, 'diary'),
+      where('diaryDate', '>=', from),
+      where('diaryDate', '<=', to),
+    )).then(snapshot => {
+      const result: Record<number, DiaryEntry> = {}
+      snapshot.forEach(doc => {
+        const data = doc.data()
+        const attempts: { num: number; englishText: string; score: number; correctedText: string; corrections: DiaryEntry['corrections']; createdAt: Timestamp }[] = data.translationAttempts ?? []
+        const last = attempts.reduce((a, b) => a.createdAt.seconds >= b.createdAt.seconds ? a : b, attempts[0])
+        if (!last) return
+
+        const date = Number(data.diaryDate.split('-')[2])
+        const ts: Timestamp = data.createdAt
+        const d = ts.toDate()
+        const createdTime = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+
+        result[date] = {
+          score: last.score,
+          koreanText: data.koreanText,
+          englishText: last.englishText,
+          aiCorrectedText: last.correctedText,
+          corrections: last.corrections ?? [],
+          createdTime,
+        }
+      })
+      setEntries(result)
+    }).catch(err => console.error('diary fetch 실패:', err))
+  }, [viewYear, viewMonth])
 
   const writtenThisWeek = 3
   const totalDaysInWeek = 7
@@ -54,8 +87,9 @@ export default function Home() {
             year={YEAR}
             month={MONTH}
             today={TODAY}
-            entries={MOCK_ENTRIES}
+            entries={entries}
             onDateClick={handleDateClick}
+            onMonthChange={(y, m) => { setViewYear(y); setViewMonth(m) }}
           />
         </div>
 
