@@ -3,12 +3,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import Layout from '../layouts/Layout'
 import './Write.css'
 import { WEEK_DAYS } from '../constants/days'
+import { gradeEntry } from '../lib/firebase'
 
 type Step = 1 | 2 | 3
-
-// Step 2에서 쓸 mock AI 점수/힌트 (나중에 실제 API로 교체)
-const MOCK_SCORE = 82
-const MOCK_HINT = '시제가 조금 어색해요. 과거에 일어난 일을 나타내보세요!'
 
 // Step 3에서 쓸 mock AI 추천 (나중에 실제 API로 교체)
 const MOCK_CORRECTIONS = [
@@ -116,12 +113,19 @@ function Step2({
   onRetry: () => void
 } & DateProps) {
   const [text, setText] = useState('')
-  const [submitted, setSubmitted] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<{ score: number; hint: string } | null>(null)
   const MAX = 1000
   const MAX_ATTEMPTS = 3
 
-  function handleSubmit() {
-    setSubmitted(true)
+  async function handleSubmit() {
+    setLoading(true)
+    try {
+      const res = await gradeEntry({ koreanText, englishText: text })
+      setResult(res.data)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -145,21 +149,21 @@ function Step2({
             className="write-textarea"
             placeholder="한국어 원문을 영어로 번역해보세요."
             value={text}
-            onChange={e => { setText(e.target.value); setSubmitted(false) }}
+            onChange={e => { setText(e.target.value); setResult(null) }}
             maxLength={MAX}
           />
           <div className="write-charcount">{text.length} / {MAX}</div>
 
-          {submitted && (
+          {result && (
             <div className="step2-feedback">
               <div className="step2-score">
                 <span className="step2-score-label">점수</span>
-                <strong className="step2-score-value">{MOCK_SCORE} <span>/100</span></strong>
+                <strong className="step2-score-value">{result.score} <span>/100</span></strong>
               </div>
               <div className="step2-hint">
                 <span className="step2-hint-icon">💡</span>
                 <span className="step2-hint-label">힌트</span>
-                <p>{MOCK_HINT}</p>
+                <p>{result.hint}</p>
               </div>
             </div>
           )}
@@ -167,18 +171,18 @@ function Step2({
       </div>
 
       <div className="write-actions">
-        {!submitted ? (
+        {!result ? (
           <button
             className="btn-next"
-            disabled={text.trim().length === 0}
+            disabled={text.trim().length === 0 || loading}
             onClick={handleSubmit}
           >
-            채점하기
+            {loading ? '채점 중...' : '채점하기'}
           </button>
         ) : (
           <>
             {attempt < MAX_ATTEMPTS && (
-              <button className="btn-secondary" onClick={() => { setText(''); setSubmitted(false); onRetry() }}>
+              <button className="btn-secondary" onClick={() => { setText(''); setResult(null); onRetry() }}>
                 다시 작성
               </button>
             )}
